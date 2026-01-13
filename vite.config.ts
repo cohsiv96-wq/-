@@ -10,18 +10,17 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 3000
+    port: 3000,
+    strictPort: true,
   },
   build: {
-    // 针对 iOS 16.1 调整为更稳健的 es2020
-    target: 'es2020',
+    // 下调至 es2015 (ES6) 是移动端最安全的策略
+    target: 'es2015',
     minify: 'esbuild',
     outDir: 'dist',
-    rollupOptions: {
-      output: {
-        // 确保生成的 JS 文件名不带特殊字符，防止旧版 Safari 解析路径错误
-        manualChunks: undefined
-      }
-    }
+    assetsDir: 'assets',
+    // 移除复杂的 Rollup 配置，让 Vite 使用默认的最佳实践
+    sourcemap: false,
+    cssCodeSplit: true,
   }
 });

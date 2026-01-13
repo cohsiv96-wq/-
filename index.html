@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
     <title>情侣周末菜单</title>
-    <!-- 使用 CDN 引入 Tailwind 和 字体 -->
+    <!-- 使用 CDN 引入外部样式 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
     <style>
@@ -31,6 +31,8 @@
         border-radius: 50%; filter: blur(4px); animation: pulse 1s infinite alternate;
       }
       @keyframes spin { to { transform: rotate(360deg); } }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {
@@ -47,7 +49,6 @@
 </script>
 </head>
   <body>
-    <!-- 静态占位符：如果脚本加载失败，用户至少能看到这个 -->
     <div id="root">
       <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0F0F14;">
         <div style="width: 24px; height: 24px; border: 2px solid #C5FF29; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
@@ -56,7 +57,7 @@
         </div>
       </div>
     </div>
-    <!-- 唯一入口：Vite 会自动识别并处理 index.tsx 及其所有 import 依赖 -->
+    <!-- 路径改为相对路径，确保在不同环境下都能正确找到入口 -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
