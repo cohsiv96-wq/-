@@ -1,16 +1,17 @@
 
 /**
  * 云端同步服务
- * 注意：已修复变量命名语法错误
  */
-const SUPABASE_URL = 'https://cbpseqmzvvufuajdhcqk.supabase.co'; // 您的 Supabase 项目地址
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNicHNlcW16dnZ1ZnVhamRoY3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyNjQwMzUsImV4cCI6MjA4Mzg0MDAzNX0.hmOOpdPr5Z2SLpwnNIqq7UYtYKcCalbENRT2d3x9eWY'; // 您的 Supabase 匿名密钥
+const SUPABASE_URL = 'https://cbpseqmzvvufuajdhcqk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNicHNlcW16dnZ1ZnVhamRoY3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyNjQwMzUsImV4cCI6MjA4Mzg0MDAzNX0.hmOOpdPr5Z2SLpwnNIqq7UYtYKcCalbENRT2d3x9eWY';
 
 export const syncWithCloud = async (coupleId: string, localData: any) => {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.warn("未配置数据库 API Key，同步功能暂不可用");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !coupleId) {
     return localData;
   }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
 
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/couple_data?couple_id=eq.${coupleId}`, {
@@ -18,17 +19,20 @@ export const syncWithCloud = async (coupleId: string, localData: any) => {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      }
+      },
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-        throw new Error(`Cloud sync error: ${response.statusText}`);
+        return localData;
     }
 
     const cloudData = await response.json();
     return cloudData[0]?.data || localData;
   } catch (error) {
-    console.error("同步失败:", error);
+    console.warn("Cloud sync paused or timeout");
     return localData;
   }
 };
@@ -52,6 +56,6 @@ export const pushToCloud = async (coupleId: string, data: any) => {
       })
     });
   } catch (e) {
-    console.error("上传失败:", e);
+    // 自动推送失败不影响本地使用
   }
 };
