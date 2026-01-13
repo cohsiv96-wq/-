@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Dish } from '../types.ts';
-import { Utensils, Trash2, Edit2, Plus, Check } from 'lucide-react';
+import { Dish } from '../types';
+import { Trash2, Edit2, Plus, Check } from 'lucide-react';
 
 interface DishCardProps {
   dish: Dish;

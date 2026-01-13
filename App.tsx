@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Dish, WeekendMenu } from './types.ts';
-import DishCard from './components/DishCard.tsx';
-import DishForm from './components/DishForm.tsx';
-import { syncWithCloud, pushToCloud } from './services/syncService.ts';
+import { Dish, WeekendMenu } from './types';
+import DishCard from './components/DishCard';
+import DishForm from './components/DishForm';
+import { syncWithCloud, pushToCloud } from './services/syncService';
 import { 
-  Plus, Search, Calendar, Library, Dices, 
-  History, LayoutGrid, Shuffle, Trash2, Cloud, CloudOff, Link2
+  Plus, Search, Calendar, Library, 
+  History, LayoutGrid, Shuffle, Cloud, CloudOff, Link2
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'couple_weekend_v2_storage';
@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [editingDish, setEditingDish] = useState<Dish | undefined>(undefined);
   const [randomDishes, setRandomDishes] = useState<Dish[]>([]);
 
-  // 1. 初始化加载
   useEffect(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
@@ -38,7 +37,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // 2. 数据持久化与云端推送
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ dishes, currentMenu, history }));
     if (coupleId) {
@@ -46,7 +44,6 @@ const App: React.FC = () => {
     }
   }, [dishes, currentMenu, history, coupleId]);
 
-  // 3. 定时轮询同步（简单实现双人同步）
   useEffect(() => {
     if (!coupleId) return;
     
@@ -54,7 +51,6 @@ const App: React.FC = () => {
       setSyncStatus('syncing');
       const remoteData = await syncWithCloud(coupleId, { dishes, currentMenu, history });
       if (remoteData) {
-        // 简化的合并逻辑：合并 Dish 列表
         setDishes(prev => {
           const merged = [...prev];
           remoteData.dishes?.forEach((remoteDish: Dish) => {
@@ -73,7 +69,7 @@ const App: React.FC = () => {
       }
     };
 
-    const interval = setInterval(performSync, 10000); // 每10秒同步一次
+    const interval = setInterval(performSync, 10000);
     performSync(); 
     return () => clearInterval(interval);
   }, [coupleId]);
@@ -129,7 +125,7 @@ const App: React.FC = () => {
             <h1 className="text-xl font-black tracking-tight italic">周末吃什么</h1>
             <div className="flex items-center gap-1.5" onClick={() => setIsSyncModalOpen(true)}>
               <div className={`w-1.5 h-1.5 rounded-full ${coupleId ? (syncStatus === 'syncing' ? 'bg-orange-400 animate-pulse' : 'bg-[#C5FF29]') : 'bg-white/20'}`}></div>
-              <p className="text-[9px] text-white/30 uppercase font-black tracking-widest">
+              <p className="text-[9px] text-white/30 uppercase font-black tracking-widest cursor-pointer">
                 {coupleId ? `Room: ${coupleId}` : '点击开启双人同步'}
               </p>
             </div>
@@ -148,29 +144,29 @@ const App: React.FC = () => {
       <main className="px-5 pt-6 flex-1">
         {activeTab === 'home' && (
           <div className="space-y-8">
-            {/* 灵感抽取部分保持不变... */}
             <section className="bg-gradient-to-br from-[#1E1E2A] to-[#14141C] rounded-[2.5rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden">
               <div className="flex items-center gap-2 mb-6">
                 <Shuffle size={16} className="text-[#C5FF29]" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">今日灵感</span>
               </div>
               <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-2 px-2 mb-6">
-                {randomDishes.map((dish) => (
+                {randomDishes.length > 0 ? randomDishes.map((dish) => (
                   <div key={dish.id} className="shrink-0 w-44 bg-white/5 rounded-3xl p-5 border border-white/5 flex flex-col justify-between h-40">
                     <div>
                       <p className="font-bold text-sm mb-1 line-clamp-2">{dish.name}</p>
                       <p className="text-[9px] text-white/30 line-clamp-2 italic">{dish.notes || "期待美味..."}</p>
                     </div>
-                    <button onClick={() => addToMenu(dish.id)} className="w-full py-2 bg-[#C5FF29] text-black rounded-xl text-[10px] font-black uppercase active:scale-95">加入清单</button>
+                    <button onClick={() => addToMenu(dish.id)} className="w-full py-2 bg-[#C5FF29] text-black rounded-xl text-[10px] font-black uppercase active:scale-95 transition-all">加入清单</button>
                   </div>
-                ))}
+                )) : (
+                  <div className="w-full py-10 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">暂无灵感，先添加菜谱吧</div>
+                )}
               </div>
-              <button onClick={pickRandomDishes} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-20">
+              <button onClick={pickRandomDishes} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 试试手气 <Shuffle size={14} />
               </button>
             </section>
 
-            {/* 周末清单部分... */}
             <section className="space-y-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -196,7 +192,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* 库和历史页面保持逻辑不变... */}
         {activeTab === 'library' && (
            <div className="space-y-6">
               <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-3">
@@ -214,9 +209,15 @@ const App: React.FC = () => {
               </div>
            </div>
         )}
+
+        {activeTab === 'history' && (
+          <div className="h-[60vh] flex flex-col items-center justify-center text-white/20 space-y-4">
+            <History size={48} strokeWidth={1} />
+            <p className="text-[10px] font-black uppercase tracking-widest">历史功能开发中...</p>
+          </div>
+        )}
       </main>
 
-      {/* 配对码设置弹窗 */}
       {isSyncModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSyncModalOpen(false)}></div>
@@ -227,7 +228,7 @@ const App: React.FC = () => {
               </div>
               <h3 className="text-lg font-black italic">开启双人同步</h3>
             </div>
-            <p className="text-xs text-white/40 mb-6 leading-relaxed">两人输入相同的配对码（如：LOVEYOU），即可在各自手机上看到对方添加的菜品和清单。</p>
+            <p className="text-xs text-white/40 mb-6 leading-relaxed">两人输入相同的配对码，即可在各自手机上看到对方添加的菜品和清单。</p>
             <input 
               type="text" 
               value={coupleId} 
@@ -236,7 +237,7 @@ const App: React.FC = () => {
                 setCoupleId(val);
                 localStorage.setItem('couple_id', val);
               }}
-              placeholder="输入你们的专属配对码"
+              placeholder="输入专属配对码"
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center font-black tracking-[0.2em] text-[#C5FF29] focus:outline-none focus:border-[#C5FF29] transition-all mb-6 uppercase"
             />
             <button onClick={() => setIsSyncModalOpen(false)} className="w-full py-4 bg-[#C5FF29] text-black rounded-2xl font-black text-xs uppercase">确 定</button>
@@ -244,7 +245,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* 底部导航... */}
       <nav className="fixed bottom-0 left-0 right-0 h-24 nav-bubble border-t border-white/5 flex justify-around items-center px-4 z-50">
         {[
           { id: 'home', icon: LayoutGrid, label: '首页' },

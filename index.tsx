@@ -1,25 +1,18 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
+import App from './App';
 
 const mountApp = () => {
   const rootElement = document.getElementById('root');
-  if (!rootElement) {
-    console.error("Failed to find root element");
-    return;
-  }
+  if (!rootElement) return;
 
-  try {
-    const root = ReactDOM.createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-  } catch (err) {
-    console.error("React Mounting Error:", err);
-  }
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
 };
 
 mountApp();

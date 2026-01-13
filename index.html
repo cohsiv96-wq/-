@@ -9,25 +9,8 @@
     <meta name="format-detection" content="telephone=no" />
     <title>情侣周末菜单</title>
     <script>
-      // 深度模拟 process 对象，确保即使环境没配置 API_KEY 也不会崩溃
-      window.process = { 
-        env: { 
-          API_KEY: "" // 这里预留空字符串，防止 SDK 内部访问报错
-        } 
-      };
-      
-      // 全局错误捕获，针对加载失败的情况
-      window.onerror = function(msg, url, line) {
-        console.error('Runtime Error:', msg, 'at', url, ':', line);
-        if (msg.includes('Script error') || msg.includes('import')) {
-          const root = document.getElementById('root');
-          if (root) {
-            root.innerHTML = '<div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0F0F14;color:white;font-family:sans-serif;"><p style="opacity:0.5;font-size:12px;">加载资源时遇到网络问题</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;background:#C5FF29;color:black;border-radius:16px;font-weight:bold;border:none;">重试加载</button></div>';
-          }
-        }
-      };
+      window.process = { env: { API_KEY: "" } };
     </script>
-    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
     <style>
@@ -59,28 +42,24 @@
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
       }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-    <script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@1.35.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.460.0",
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
   }
 }
 </script>
-  </head>
+</head>
   <body>
-    <div id="root">
-      <div class="loading-container">
-        <div class="loading-dot"></div>
-        <p style="margin-top:20px; color:rgba(255,255,255,0.2); font-size:10px; font-weight:900; letter-spacing:0.2em;">LOADING MODULES</p>
-      </div>
-    </div>
-    <script type="module" src="index.tsx"></script>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

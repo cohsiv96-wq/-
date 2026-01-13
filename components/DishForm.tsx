@@ -1,11 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Dish } from '../types.ts';
+import { Dish } from '../types';
 import { X, Plus, Image as ImageIcon, Check } from 'lucide-react';
 
 interface DishFormProps {
   initialDish?: Dish;
-  // updatedAt is managed by the parent component, so we omit it here
   onSave: (dish: Omit<Dish, 'id' | 'createTime' | 'updatedAt'>) => void;
   onClose: () => void;
 }
@@ -62,7 +61,6 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar space-y-9 px-1">
-          {/* 图片区 */}
           <div 
             onClick={() => fileInputRef.current?.click()}
             className="w-full h-44 bg-white/5 rounded-[2rem] border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden relative active:bg-white/10 transition-colors"
@@ -72,32 +70,30 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
             ) : (
               <>
                 <ImageIcon className="text-white/10 mb-2" size={32} />
-                <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.2em]">添加这道菜的实拍</p>
+                <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.2em]">添加实拍图</p>
               </>
             )}
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
           </div>
 
-          {/* 输入区 */}
           <div className="relative">
             <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-3">菜名</p>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="我们要吃什么？"
+              placeholder="这道菜叫什么？"
               className="w-full bg-transparent text-xl font-black border-b border-white/10 pb-3 focus:outline-none focus:border-[#C5FF29] transition-all"
             />
           </div>
 
-          {/* 食材区 */}
           <div className="space-y-4">
             <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">必备食材</p>
             <div className="flex flex-wrap gap-2.5">
               {ingredients.map((ing, i) => (
                 <span key={i} className="px-4 py-2 bg-white/5 rounded-2xl text-[12px] font-black flex items-center gap-3 border border-white/5">
                   {ing}
-                  <X size={14} className="text-white/20" onClick={() => setIngredients(ingredients.filter((_, idx) => idx !== i))} />
+                  <X size={14} className="text-white/20 cursor-pointer" onClick={() => setIngredients(ingredients.filter((_, idx) => idx !== i))} />
                 </span>
               ))}
             </div>
@@ -106,7 +102,7 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
                 type="text"
                 value={ingredientInput}
                 onChange={(e) => setIngredientInput(e.target.value)}
-                placeholder="输入一样食材..."
+                placeholder="添加食材..."
                 className="flex-1 bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-xs focus:outline-none"
               />
               <button type="submit" className="px-5 bg-white/10 rounded-2xl active:scale-95 transition-all">
@@ -117,7 +113,7 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
 
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">主打风味</p>
+              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">风味</p>
               <div className="flex flex-wrap gap-2.5">
                 {['麻辣', '清爽', '甜口', '浓郁'].map(tag => (
                   <button key={tag} onClick={() => toggleTag(tasteTags, setTasteTags, tag)} className={`px-3 py-2 rounded-xl text-[10px] font-black border transition-all ${tasteTags.includes(tag) ? 'bg-[#C5FF29] text-black border-[#C5FF29]' : 'bg-white/5 text-white/30 border-white/5'}`}>
@@ -139,11 +135,11 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
           </div>
 
           <div className="space-y-4 pb-6">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">灵感备注</p>
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">备注</p>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="这道菜里藏着什么秘密？"
+              placeholder="想说的话..."
               className="w-full bg-white/5 border border-white/5 rounded-[1.5rem] px-5 py-5 text-xs h-24 focus:outline-none resize-none transition-all"
             />
           </div>
@@ -156,7 +152,7 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
             className="w-full py-5 bg-[#C5FF29] text-black rounded-[2rem] font-black text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-20 shadow-2xl shadow-[#C5FF29]/20"
           >
             <Check size={24} strokeWidth={4} />
-            保存这份灵感
+            保存
           </button>
         </div>
       </div>
