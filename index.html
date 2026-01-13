@@ -8,75 +8,79 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
     <title>情侣周末菜单</title>
-    <!-- 引入微信 JSSDK -->
+    <script>
+      // 深度模拟 process 对象，确保即使环境没配置 API_KEY 也不会崩溃
+      window.process = { 
+        env: { 
+          API_KEY: "" // 这里预留空字符串，防止 SDK 内部访问报错
+        } 
+      };
+      
+      // 全局错误捕获，针对加载失败的情况
+      window.onerror = function(msg, url, line) {
+        console.error('Runtime Error:', msg, 'at', url, ':', line);
+        if (msg.includes('Script error') || msg.includes('import')) {
+          const root = document.getElementById('root');
+          if (root) {
+            root.innerHTML = '<div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0F0F14;color:white;font-family:sans-serif;"><p style="opacity:0.5;font-size:12px;">加载资源时遇到网络问题</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;background:#C5FF29;color:black;border-radius:16px;font-weight:bold;border:none;">重试加载</button></div>';
+          }
+        }
+      };
+    </script>
     <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --neon-lime: #C5FF29;
-        --electric-purple: #7B57FF;
-        --dark-bg: #0F0F14;
-      }
-      * {
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
-        box-sizing: border-box;
-      }
+      :root { --neon-lime: #C5FF29; --dark-bg: #0F0F14; }
       body {
         font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
         background-color: var(--dark-bg);
-        color: #FFFFFF;
-        overflow-x: hidden;
-        overscroll-behavior-y: none;
         margin: 0;
+        color: white;
       }
-      ::-webkit-scrollbar {
-        display: none;
+      .loading-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
-      .nav-bubble {
-        background: rgba(20, 20, 25, 0.95);
-        backdrop-filter: blur(30px);
-        -webkit-backdrop-filter: blur(30px);
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      .safe-pb {
-        padding-bottom: calc(100px + env(safe-area-inset-bottom));
-      }
-      @keyframes pulse-gentle {
-        0%, 100% { opacity: 0.3; transform: scale(1); }
-        50% { opacity: 0.5; transform: scale(1.05); }
-      }
-      .loading-blob {
-        width: 60px;
-        height: 60px;
+      .loading-dot {
+        width: 12px;
+        height: 12px;
         background: var(--neon-lime);
-        filter: blur(40px);
         border-radius: 50%;
-        animation: pulse-gentle 2s infinite ease-in-out;
+        filter: blur(4px);
+        animation: pulse 1s infinite alternate;
+      }
+      @keyframes pulse { from { opacity: 0.2; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
+      .nav-bubble {
+        background: rgba(15, 15, 20, 0.9);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
       }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.35.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root">
-      <!-- 初始加载态，避免首屏全黑 -->
-      <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #0F0F14;">
-        <div class="loading-blob"></div>
+      <div class="loading-container">
+        <div class="loading-dot"></div>
+        <p style="margin-top:20px; color:rgba(255,255,255,0.2); font-size:10px; font-weight:900; letter-spacing:0.2em;">LOADING MODULES</p>
       </div>
     </div>
-    <!-- 关键修复：显式加载执行脚本 -->
     <script type="module" src="index.tsx"></script>
   </body>
 </html>

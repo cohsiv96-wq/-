@@ -1,8 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Dish } from '../types.ts';
-import { X, Sparkles, Loader2, Plus, Image as ImageIcon, Check } from 'lucide-react';
-import { suggestIngredients } from '../services/geminiService.ts';
+import { X, Plus, Image as ImageIcon, Check } from 'lucide-react';
 
 interface DishFormProps {
   initialDish?: Dish;
@@ -18,7 +17,6 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
   const [tasteTags, setTasteTags] = useState<string[]>(initialDish?.tasteTags || []);
   const [customTags, setCustomTags] = useState<string[]>(initialDish?.customTags || []);
   const [notes, setNotes] = useState(initialDish?.notes || '');
-  const [isSuggesting, setIsSuggesting] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,17 +42,6 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
     }
   };
 
-  const handleSuggest = async () => {
-    if (!name.trim()) return;
-    setIsSuggesting(true);
-    try {
-      const suggested = await suggestIngredients(name);
-      setIngredients(prev => Array.from(new Set([...prev, ...suggested])));
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
-
   const toggleTag = (list: string[], setList: (l: string[]) => void, tag: string) => {
     list.includes(tag) ? setList(list.filter(t => t !== tag)) : setList([...list, tag]);
   };
@@ -67,7 +54,7 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
         <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-7 shrink-0"></div>
         
         <div className="flex justify-between items-center mb-8 shrink-0">
-          <h2 className="text-2xl font-black">{initialDish ? '调整这份美味' : '新增灵感'}</h2>
+          <h2 className="text-2xl font-black">{initialDish ? '调整这份美味' : '记录新灵感'}</h2>
           <button onClick={onClose} className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center text-white/30 active:scale-90 transition-all">
             <X size={20} />
           </button>
@@ -100,13 +87,6 @@ const DishForm: React.FC<DishFormProps> = ({ initialDish, onSave, onClose }) => 
               placeholder="我们要吃什么？"
               className="w-full bg-transparent text-xl font-black border-b border-white/10 pb-3 focus:outline-none focus:border-[#C5FF29] transition-all"
             />
-            <button 
-              onClick={handleSuggest}
-              disabled={isSuggesting || !name}
-              className="absolute right-0 bottom-3.5 p-2.5 bg-[#C5FF29] text-black rounded-xl shadow-xl shadow-[#C5FF29]/20 disabled:opacity-20 active:scale-90 transition-all"
-            >
-              {isSuggesting ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-            </button>
           </div>
 
           {/* 食材区 */}
