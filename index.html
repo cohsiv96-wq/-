@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
     <title>情侣周末菜单</title>
-    <!-- 仅保留必要的样式，移除可能导致解析卡顿的重负载脚本 -->
+    <!-- 使用 CDN 引入 Tailwind 和 字体 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
     <style>
@@ -30,6 +30,7 @@
         width: 12px; height: 12px; background: var(--neon-lime);
         border-radius: 50%; filter: blur(4px); animation: pulse 1s infinite alternate;
       }
+      @keyframes spin { to { transform: rotate(360deg); } }
     </style>
   <script type="importmap">
 {
@@ -46,18 +47,16 @@
 </script>
 </head>
   <body>
-    <!-- 这是一个静态的占位符，如果页面连它都没显示，说明浏览器没能下载完 HTML 就崩溃了 -->
+    <!-- 静态占位符：如果脚本加载失败，用户至少能看到这个 -->
     <div id="root">
-      <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #0F0F14;">
-        <div style="text-align: center;">
-          <div style="width: 20px; height: 20px; background: #C5FF29; border-radius: 50%; margin: 0 auto 10px; opacity: 0.5;"></div>
-          <div style="color: rgba(255,255,255,0.2); font-size: 10px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase;">
-            Initializing Experience
-          </div>
+      <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0F0F14;">
+        <div style="width: 24px; height: 24px; border: 2px solid #C5FF29; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
+        <div style="color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 900; letter-spacing: 0.4em; text-transform: uppercase;">
+          System Starting
         </div>
       </div>
     </div>
-    <!-- 脚本放在 body 底部加载，确保前面的静态 DOM 先渲染 -->
+    <!-- 唯一入口：Vite 会自动识别并处理 index.tsx 及其所有 import 依赖 -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
