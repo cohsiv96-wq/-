@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
     <title>情侣周末菜单</title>
+    <!-- 引入微信 JSSDK -->
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
     <style>
@@ -14,48 +17,44 @@
         --neon-lime: #C5FF29;
         --electric-purple: #7B57FF;
         --dark-bg: #0F0F14;
-        --card-bg: #1A1A22;
       }
       * {
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        box-sizing: border-box;
       }
       body {
         font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
         background-color: var(--dark-bg);
         color: #FFFFFF;
         overflow-x: hidden;
-        /* 防止移动端弹性滚动导致背景露底 */
         overscroll-behavior-y: none;
+        margin: 0;
       }
-      .custom-scrollbar::-webkit-scrollbar {
+      ::-webkit-scrollbar {
         display: none;
-      }
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .glass-card {
-        background: rgba(26, 26, 34, 0.7);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
       }
       .nav-bubble {
-        background: rgba(20, 20, 25, 0.8);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(20, 20, 25, 0.95);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         padding-bottom: env(safe-area-inset-bottom);
       }
       .safe-pb {
         padding-bottom: calc(100px + env(safe-area-inset-bottom));
       }
-      @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+      @keyframes pulse-gentle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.05); }
       }
-      .animate-slide-up {
-        animation: slideUp 0.3s ease-out forwards;
+      .loading-blob {
+        width: 60px;
+        height: 60px;
+        background: var(--neon-lime);
+        filter: blur(40px);
+        border-radius: 50%;
+        animation: pulse-gentle 2s infinite ease-in-out;
       }
     </style>
   <script type="importmap">
@@ -71,7 +70,13 @@
 </script>
 </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <div id="root">
+      <!-- 初始加载态，避免首屏全黑 -->
+      <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #0F0F14;">
+        <div class="loading-blob"></div>
+      </div>
+    </div>
+    <!-- 关键修复：显式加载执行脚本 -->
+    <script type="module" src="index.tsx"></script>
   </body>
 </html>
