@@ -5,21 +5,24 @@ export interface Dish {
   ingredients: string[];
   tasteTags: string[];
   customTags: string[];
-  image?: string; // base64 string or URL
+  image?: string; 
   notes?: string;
   createTime: number;
+  updatedAt: number; // 用于云端合并判断
 }
 
 export interface WeekendMenu {
   id: string;
-  date: string; // ISO string for the weekend
+  date: string; 
   dishIds: string[];
   status: 'planned' | 'completed';
+  updatedAt: number;
 }
 
 export interface AppState {
   dishes: Dish[];
   currentMenu: WeekendMenu | null;
   history: WeekendMenu[];
-  coupleName: string;
+  coupleId?: string; // 你们的配对码
+  lastSyncTime?: number;
 }

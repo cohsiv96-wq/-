@@ -5,7 +5,8 @@ import { X, Plus, Image as ImageIcon, Check } from 'lucide-react';
 
 interface DishFormProps {
   initialDish?: Dish;
-  onSave: (dish: Omit<Dish, 'id' | 'createTime'>) => void;
+  // updatedAt is managed by the parent component, so we omit it here
+  onSave: (dish: Omit<Dish, 'id' | 'createTime' | 'updatedAt'>) => void;
   onClose: () => void;
 }
 
