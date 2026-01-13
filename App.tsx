@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Dish, WeekendMenu } from './types';
 import DishCard from './components/DishCard';
 import DishForm from './components/DishForm';
 import { syncWithCloud, pushToCloud } from './services/syncService';
+import { getAIRecommendations } from './services/geminiService';
 import { 
   Plus, Search, Calendar, Library, 
-  History, LayoutGrid, Shuffle, Cloud, CloudOff, Link2
+  History, LayoutGrid, Shuffle, Cloud, CloudOff, Link2, Sparkles
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'couple_weekend_v2_storage';
@@ -23,7 +23,8 @@ const App: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [editingDish, setEditingDish] = useState<Dish | undefined>(undefined);
-  const [randomDishes, setRandomDishes] = useState<Dish[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [isLoadingRecs, setIsLoadingRecs] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -35,7 +36,15 @@ const App: React.FC = () => {
         setHistory(parsed.history || []);
       } catch (e) { console.error(e); }
     }
+    refreshRecommendations([]);
   }, []);
+
+  const refreshRecommendations = async (currentDishes: Dish[]) => {
+    setIsLoadingRecs(true);
+    const recs = await getAIRecommendations(currentDishes.map(d => d.name));
+    setRecommendations(recs);
+    setIsLoadingRecs(false);
+  };
 
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ dishes, currentMenu, history }));
@@ -69,7 +78,7 @@ const App: React.FC = () => {
       }
     };
 
-    const interval = setInterval(performSync, 10000);
+    const interval = setInterval(performSync, 15000);
     performSync(); 
     return () => clearInterval(interval);
   }, [coupleId]);
@@ -91,19 +100,23 @@ const App: React.FC = () => {
     setEditingDish(undefined);
   };
 
+  const handleAddRecToLibrary = (rec: any) => {
+    const now = Date.now();
+    const newDish: Dish = {
+      ...rec,
+      id: Math.random().toString(36).slice(2),
+      createTime: now,
+      updatedAt: now,
+      customTags: ['AI灵感']
+    };
+    setDishes(prev => [newDish, ...prev]);
+    // 自动加入本周菜单
+    addToMenu(newDish.id);
+  };
+
   const deleteDish = (id: string) => {
     setDishes(prev => prev.filter(d => d.id !== id));
   };
-
-  const pickRandomDishes = () => {
-    if (dishes.length === 0) return;
-    const shuffled = [...dishes].sort(() => 0.5 - Math.random());
-    setRandomDishes(shuffled.slice(0, 3));
-  };
-
-  useEffect(() => {
-    if (dishes.length > 0 && randomDishes.length === 0) pickRandomDishes();
-  }, [dishes]);
 
   const menuDishes = useMemo(() => {
     return (currentMenu?.dishIds || []).map(id => dishes.find(d => d.id === id)).filter(Boolean) as Dish[];
@@ -114,6 +127,13 @@ const App: React.FC = () => {
       const existingIds = prev?.dishIds || [];
       if (existingIds.includes(id)) return prev;
       return { id: 'current', date: new Date().toISOString(), dishIds: [...existingIds, id], status: 'planned', updatedAt: Date.now() };
+    });
+  };
+
+  const removeFromMenu = (id: string) => {
+    setCurrentMenu(prev => {
+      if (!prev) return null;
+      return { ...prev, dishIds: prev.dishIds.filter(itemId => itemId !== id), updatedAt: Date.now() };
     });
   };
 
@@ -141,49 +161,83 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="px-5 pt-6 flex-1">
+      <main className="px-5 pt-6 flex-1 overflow-x-hidden">
         {activeTab === 'home' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-gradient-to-br from-[#1E1E2A] to-[#14141C] rounded-[2.5rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden">
-              <div className="flex items-center gap-2 mb-6">
-                <Shuffle size={16} className="text-[#C5FF29]" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">今日灵感</span>
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-[#C5FF29]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/40">今日灵感</span>
+                </div>
+                {isLoadingRecs && <div className="loading-dot"></div>}
               </div>
-              <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-2 px-2 mb-6">
-                {randomDishes.length > 0 ? randomDishes.map((dish) => (
-                  <div key={dish.id} className="shrink-0 w-44 bg-white/5 rounded-3xl p-5 border border-white/5 flex flex-col justify-between h-40">
+              
+              <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-2 px-2 mb-6 scroll-smooth">
+                {recommendations.length > 0 ? recommendations.map((rec, idx) => (
+                  <div key={idx} className="shrink-0 w-48 bg-white/5 rounded-3xl p-5 border border-white/5 flex flex-col justify-between h-44 group active:bg-white/10 transition-colors">
                     <div>
-                      <p className="font-bold text-sm mb-1 line-clamp-2">{dish.name}</p>
-                      <p className="text-[9px] text-white/30 line-clamp-2 italic">{dish.notes || "期待美味..."}</p>
+                      <p className="font-bold text-sm mb-1 line-clamp-2">{rec.name}</p>
+                      <p className="text-[9px] text-white/30 line-clamp-3 italic leading-relaxed">{rec.notes}</p>
                     </div>
-                    <button onClick={() => addToMenu(dish.id)} className="w-full py-2 bg-[#C5FF29] text-black rounded-xl text-[10px] font-black uppercase active:scale-95 transition-all">加入清单</button>
+                    <button 
+                      onClick={() => handleAddRecToLibrary(rec)}
+                      className="w-full py-2.5 bg-[#C5FF29] text-black rounded-xl text-[10px] font-black uppercase active:scale-95 transition-all"
+                    >
+                      选这个
+                    </button>
                   </div>
                 )) : (
-                  <div className="w-full py-10 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">暂无灵感，先添加菜谱吧</div>
+                  <div className="w-full py-10 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">
+                    正在寻找灵感...
+                  </div>
                 )}
               </div>
-              <button onClick={pickRandomDishes} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                试试手气 <Shuffle size={14} />
+              <button 
+                onClick={() => refreshRecommendations(dishes)} 
+                disabled={isLoadingRecs}
+                className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+              >
+                换一批灵感 <Shuffle size={14} />
               </button>
             </section>
 
             <section className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center px-1">
                 <div className="flex items-center gap-2">
                   <Calendar className="text-[#C5FF29]" size={18} />
-                  <h2 className="text-lg font-black italic">周末清单</h2>
+                  <h2 className="text-lg font-black italic">本周末菜单</h2>
                 </div>
+                {menuDishes.length > 0 && (
+                   <span className="px-2 py-0.5 bg-white/5 rounded text-[10px] font-bold text-white/40">
+                     共 {menuDishes.length} 道
+                   </span>
+                )}
               </div>
+              
               {menuDishes.length === 0 ? (
-                <div className="py-16 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10 flex flex-col items-center justify-center text-white/20 text-[10px] font-black uppercase">
+                <div className="py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10 flex flex-col items-center justify-center text-white/15 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
                   空空如也，快去挑选菜品吧
                 </div>
               ) : (
                 <div className="space-y-4">
                   {menuDishes.map(dish => (
-                    <div key={dish.id} className="bg-[#1A1A22] p-5 rounded-3xl border border-white/5 flex items-center gap-4 animate-in slide-in-from-right duration-300">
-                      <div className="w-12 h-12 bg-[#C5FF29]/10 text-[#C5FF29] rounded-xl flex items-center justify-center font-black italic">{dish.name[0]}</div>
-                      <div className="flex-1 text-sm font-black">{dish.name}</div>
+                    <div key={dish.id} className="bg-[#1A1A22] p-5 rounded-3xl border border-white/5 flex items-center gap-4 animate-in slide-in-from-right duration-300 group">
+                      <div className="w-12 h-12 bg-white/5 text-[#C5FF29] rounded-2xl flex items-center justify-center font-black italic group-hover:bg-[#C5FF29] group-hover:text-black transition-colors">
+                        {dish.name[0]}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-black mb-0.5">{dish.name}</div>
+                        <div className="text-[10px] text-white/30 truncate max-w-[180px]">
+                          {dish.ingredients.slice(0, 3).join(' · ')}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => removeFromMenu(dish.id)}
+                        className="w-10 h-10 flex items-center justify-center text-white/10 hover:text-red-400 active:scale-90 transition-all"
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -193,34 +247,47 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'library' && (
-           <div className="space-y-6">
-              <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-3">
+           <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-3 border border-white/5 focus-within:border-[#C5FF29]/30 transition-all">
                 <Search size={18} className="text-white/20" />
-                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="搜索共同的菜谱..." className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/20" />
+                <input 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  placeholder="搜索我们的菜谱..." 
+                  className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/20" 
+                />
               </div>
               <div className="grid grid-cols-1 gap-6 pb-10">
-                {dishes.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase())).map(dish => (
-                  <DishCard 
-                    key={dish.id} dish={dish} onDelete={deleteDish}
-                    onEdit={(d) => { setEditingDish(d); setIsFormOpen(true); }}
-                    onAddToMenu={addToMenu} isInMenu={currentMenu?.dishIds.includes(dish.id)}
-                  />
-                ))}
+                {dishes.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+                  dishes.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase())).map(dish => (
+                    <DishCard 
+                      key={dish.id} dish={dish} onDelete={deleteDish}
+                      onEdit={(d) => { setEditingDish(d); setIsFormOpen(true); }}
+                      onAddToMenu={addToMenu} isInMenu={currentMenu?.dishIds.includes(dish.id)}
+                    />
+                  ))
+                ) : (
+                  <div className="py-20 text-center text-white/20 text-xs font-bold uppercase tracking-widest">
+                    没有找到相关菜谱
+                  </div>
+                )}
               </div>
            </div>
         )}
 
         {activeTab === 'history' && (
-          <div className="h-[60vh] flex flex-col items-center justify-center text-white/20 space-y-4">
-            <History size={48} strokeWidth={1} />
-            <p className="text-[10px] font-black uppercase tracking-widest">历史功能开发中...</p>
+          <div className="h-[60vh] flex flex-col items-center justify-center text-white/20 space-y-4 animate-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+              <History size={40} strokeWidth={1.5} />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-widest">过往的美味都在路上了...</p>
           </div>
         )}
       </main>
 
       {isSyncModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSyncModalOpen(false)}></div>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsSyncModalOpen(false)}></div>
           <div className="relative bg-[#1A1A22] w-full max-w-sm rounded-[2.5rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 bg-[#C5FF29]/10 rounded-2xl flex items-center justify-center text-[#C5FF29]">
@@ -228,7 +295,7 @@ const App: React.FC = () => {
               </div>
               <h3 className="text-lg font-black italic">开启双人同步</h3>
             </div>
-            <p className="text-xs text-white/40 mb-6 leading-relaxed">两人输入相同的配对码，即可在各自手机上看到对方添加的菜品和清单。</p>
+            <p className="text-[11px] text-white/40 mb-6 leading-relaxed">在两台设备上输入相同的<b>配对码</b>，即可实时共享菜谱和清单。数据会加密存储在云端。</p>
             <input 
               type="text" 
               value={coupleId} 
@@ -240,7 +307,7 @@ const App: React.FC = () => {
               placeholder="输入专属配对码"
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-center font-black tracking-[0.2em] text-[#C5FF29] focus:outline-none focus:border-[#C5FF29] transition-all mb-6 uppercase"
             />
-            <button onClick={() => setIsSyncModalOpen(false)} className="w-full py-4 bg-[#C5FF29] text-black rounded-2xl font-black text-xs uppercase">确 定</button>
+            <button onClick={() => setIsSyncModalOpen(false)} className="w-full py-4 bg-[#C5FF29] text-black rounded-2xl font-black text-xs uppercase shadow-xl shadow-[#C5FF29]/10">开始同步</button>
           </div>
         </div>
       )}
@@ -248,12 +315,13 @@ const App: React.FC = () => {
       <nav className="fixed bottom-0 left-0 right-0 h-24 nav-bubble border-t border-white/5 flex justify-around items-center px-4 z-50">
         {[
           { id: 'home', icon: LayoutGrid, label: '首页' },
-          { id: 'library', icon: Library, label: '菜谱' },
-          { id: 'history', icon: History, label: '历史' }
+          { id: 'library', icon: Library, label: '菜谱库' },
+          { id: 'history', icon: History, label: '回忆' }
         ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`flex flex-col items-center gap-1 transition-all ${activeTab === t.id ? 'text-[#C5FF29] scale-110' : 'text-white/20 scale-100'}`}>
+          <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${activeTab === t.id ? 'text-[#C5FF29] -translate-y-1' : 'text-white/20'}`}>
             <t.icon size={22} strokeWidth={activeTab === t.id ? 3 : 2} />
             <span className="text-[9px] font-black uppercase tracking-widest">{t.label}</span>
+            {activeTab === t.id && <div className="w-1 h-1 bg-[#C5FF29] rounded-full"></div>}
           </button>
         ))}
       </nav>
@@ -262,5 +330,12 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+// 辅助组件：简单的 X 图标
+const X = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18M6 6l12 12"/>
+  </svg>
+);
 
 export default App;
