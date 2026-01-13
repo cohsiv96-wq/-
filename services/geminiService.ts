@@ -1,25 +1,24 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getAI = () => {
-  // 严格检查，防止 process.env.API_KEY 被注入为字符串 "undefined" 或 "null"
+  // 严格过滤环境变量中的非法字符串，防止 Vite 注入 undefined 的字符串形式
   const apiKey = process.env.API_KEY;
-  const isValidKey = apiKey && 
-                     apiKey !== "" && 
-                     apiKey !== "undefined" && 
-                     apiKey !== "null" && 
-                     apiKey.length > 10; // API Key 通常较长
+  const isKeyStringValid = typeof apiKey === 'string' && 
+                           apiKey.length > 5 && 
+                           apiKey !== "undefined" && 
+                           apiKey !== "null" &&
+                           apiKey !== "";
 
-  if (!isValidKey) return null;
+  if (!isKeyStringValid) return null;
 
   try {
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenAI({ apiKey: apiKey as string });
   } catch (e) {
-    console.error("Gemini SDK 实例化异常:", e);
+    console.warn("GenAI SDK init failed:", e);
     return null;
   }
 };
 
-// 本地备用数据，确保在无网络或无 API 时依然有内容展示
 const LOCAL_MOCK_RECOMMENDATIONS = [
   {
     name: "芝士瀑布焗饭",
@@ -45,15 +44,14 @@ export const getAIRecommendations = async (existingDishNames: string[]) => {
   const ai = getAI();
   
   if (!ai) {
-    // 延迟一小会儿模拟加载感，体验更好
-    await new Promise(r => setTimeout(r, 800));
+    // 无 API 时，直接返回本地库，避免多余的 Promise 链
     return [...LOCAL_MOCK_RECOMMENDATIONS].sort(() => 0.5 - Math.random());
   }
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `基于已有菜品：${existingDishNames.join(', ')}，推荐3个适合情侣周末做的菜。要求：名字温馨，JSON格式。`,
+      contents: `基于已有的菜谱名：${existingDishNames.join(', ')}，推荐3个新的适合情侣做的菜。`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -72,21 +70,21 @@ export const getAIRecommendations = async (existingDishNames: string[]) => {
       }
     });
 
-    return JSON.parse(response.text || "[]");
+    const text = response.text;
+    return text ? JSON.parse(text) : LOCAL_MOCK_RECOMMENDATIONS;
   } catch (error) {
-    console.warn("AI 接口调用失败，使用本地库");
     return LOCAL_MOCK_RECOMMENDATIONS;
   }
 };
 
 export const suggestIngredients = async (dishName: string) => {
   const ai = getAI();
-  if (!ai) return ["核心食材", "常用调料"];
+  if (!ai) return ["基础食材", "调味料"];
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `做“${dishName}”的核心食材清单（5个以内）。`,
+      contents: `做“${dishName}”需要哪些食材？`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -97,6 +95,6 @@ export const suggestIngredients = async (dishName: string) => {
     });
     return JSON.parse(response.text || "[]");
   } catch (error) {
-    return ["食材加载失败"];
+    return ["获取失败"];
   }
 };
